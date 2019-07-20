@@ -13,7 +13,7 @@ public class SpriteLoader : MonoBehaviour {
             instance = this;
         }
 
-        this.tileSprites = Resources.LoadAll<Sprite>("");
+        this.tileSprites = Resources.LoadAll<Sprite>("Water");
     }
 
     public Material GetTileMaterial() {
@@ -21,12 +21,8 @@ public class SpriteLoader : MonoBehaviour {
     }
 
     public Vector2[] GetTileUVs(int configIndex) {
-        int tileMapIndex = configIndex == 0 ? 0 : 46;
-        // if (Global.Tile_Config_To_Index_Map.ContainsKey(configIndex)) {
-        //     tileMapIndex = Global.Tile_Config_To_Index_Map[configIndex];
-        // }
-        Vector2[] uvs = tileSprites[tileMapIndex].uv;
-        Vector2[] sortedUVs = new Vector2[] { uvs[0], uvs[2], uvs[3], uvs[1] };
+        Vector2[] uvs = tileSprites[configIndex].uv;
+        Vector2[] sortedUVs = new Vector2[] { uvs[1], uvs[3], uvs[2], uvs[0] };
         return sortedUVs;
     }
 

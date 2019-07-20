@@ -12,21 +12,14 @@ public class MeshGenerator : MonoBehaviour {
     public List<Vector2> uvs;
 
     private Mesh mesh;
+    public GameObject collidersParent;
 
-    public List<Vector3> colVertices = new List<Vector3>();
-    public List<int> colTriangles = new List<int>();
-    private int colCount;
-
-    private MeshCollider col;
-
-    private int vertexCount;
+    public Dictionary<Vector2, GameObject> collidersDict;
     private int squareCount;
 
     void Awake() {
         mesh = GetComponent<MeshFilter>().mesh;
-        col = GetComponent<MeshCollider>();
     }
-
 
     void UpdateMesh() {
         mesh.Clear();
@@ -35,67 +28,97 @@ public class MeshGenerator : MonoBehaviour {
         mesh.uv = uvs.ToArray();
         mesh.Optimize();
         mesh.RecalculateNormals();
+    }
+
+    void ResetMesh() {
 
         squareCount = 0;
         vertices.Clear();
         triangles.Clear();
         uvs.Clear();
-
-        Mesh colMesh = new Mesh();
-        colMesh.vertices = colVertices.ToArray();
-        colMesh.triangles = colTriangles.ToArray();
-        col.sharedMesh = colMesh;
-
-        colVertices.Clear();
-        colTriangles.Clear();
-        colCount = 0;
     }
 
-    public void GenerateTileMap(byte[,] map) {
-        int z = (int)transform.position.z;
-        for (int px = 0; px < map.GetLength(0); px++) {
-            for (int py = 0; py < map.GetLength(1); py++) {
-                GenerateSquare(px, py, z, map[px, py]);
-                if (map[px, py] != 1)
-                    GenerateCollider(px, py, z);
+    void ResetColliders() {
+        if (collidersParent) {
+            Destroy(collidersParent);
+        }
+        collidersParent = new GameObject("Colliders");
+        collidersParent.transform.parent = this.transform;
+
+        collidersDict = new Dictionary<Vector2, GameObject>();
+    }
+    public void GenerateTileMap(byte[] map, int width, int height) {
+        ResetColliders();
+
+        float z = transform.position.z;
+        int sqrX = 0;
+        for (int x = 0; x < width - 1; x++) {
+            int sqrY = 0;
+            for (int y = 0; y < height - 1; y++) {
+                byte botLeft = map[(x + 0) + width * (y + 0)];
+                byte botRight = map[(x + 1) + width * (y + 0)];
+                byte topLeft = map[(x + 0) + width * (y + 1)];
+                byte topRight = map[(x + 1) + width * (y + 1)];
+                byte tileUVIndex = GetAutoTile(sqrX, sqrY, map, width, height);
+                GenerateSquare(sqrX, sqrY, z, tileUVIndex);
+                if (botLeft == 1) {
+                    GenerateCollider(sqrX + 0.25f, sqrY + 0.25f, z);
+                }
+                if (botRight == 1) {
+                    GenerateCollider(sqrX + 0.75f, sqrY + 0.25f, z);
+                }
+                if (topLeft == 1) {
+                    GenerateCollider(sqrX + 0.25f, sqrY + 0.75f, z);
+                }
+                if (topRight == 1) {
+                    GenerateCollider(sqrX + 0.75f, sqrY + 0.75f, z);
+                }
+                sqrY++;
+
             }
+            sqrX++;
         }
         UpdateMesh();
+        ResetMesh();
     }
 
-    void GenerateSquare(int x, int y, int z, byte uvIndex) {
+    byte GetAutoTile(int x, int y, byte[] map, int width, int height) {
+        byte tileUVIndex = 0;
+        tileUVIndex = (byte)(tileUVIndex << 1 | map[(x + 0) + width * (y + 0)]);
+        tileUVIndex = (byte)(tileUVIndex << 1 | map[(x + 1) + width * (y + 0)]);
+        tileUVIndex = (byte)(tileUVIndex << 1 | map[(x + 0) + width * (y + 1)]);
+        tileUVIndex = (byte)(tileUVIndex << 1 | map[(x + 1) + width * (y + 1)]);
 
-        int sqrIdx = squareCount * 4;
+        return tileUVIndex;
+    }
+
+
+    void GenerateSquare(int x, int y, float z, byte tileUVIndex) {
 
         vertices.Add(new Vector3(x, y, z));
         vertices.Add(new Vector3(x + 1, y, z));
-        vertices.Add(new Vector3(x, y - 1, z));
-        vertices.Add(new Vector3(x + 1, y - 1, z));
+        vertices.Add(new Vector3(x, y + 1, z));
+        vertices.Add(new Vector3(x + 1, y + 1, z));
+
+        int sqrIdx = squareCount * 4;
 
         AddTriangle(sqrIdx + 0, sqrIdx + 1, sqrIdx + 2);
         AddTriangle(sqrIdx + 3, sqrIdx + 2, sqrIdx + 1);
 
-        AddUVs(SpriteLoader.instance.GetTileUVs(uvIndex));
+        AddUVs(SpriteLoader.instance.GetTileUVs(tileUVIndex));
 
         squareCount++;
     }
 
-    void GenerateCollider(int x, int y, int z) {
-        int colIdx = colCount * 4;
-
-        colVertices.Add(new Vector3(x, y, z));
-        colVertices.Add(new Vector3(x + 1, y, z));
-        colVertices.Add(new Vector3(x, y - 1, z));
-        colVertices.Add(new Vector3(x + 1, y - 1, z));
-
-        colTriangles.Add((colIdx) + 0);
-        colTriangles.Add((colIdx) + 1);
-        colTriangles.Add((colIdx) + 2);
-        colTriangles.Add((colIdx) + 3);
-        colTriangles.Add((colIdx) + 2);
-        colTriangles.Add((colIdx) + 1);
-
-        colCount++;
+    void GenerateCollider(float x, float y, float z) {
+        Vector2 vec = new Vector2(x, y);
+        GameObject colObj = new GameObject();
+        colObj.transform.parent = collidersParent.transform;
+        BoxCollider2D col = colObj.AddComponent<BoxCollider2D>();
+        col.name = $"{vec.x}, {vec.y}";
+        col.size = new Vector2(0.5f, 0.5f);
+        col.offset = new Vector2(vec.x, vec.y);
+        collidersDict[vec] = colObj;
     }
 
     void AddUVs(Vector2[] newUVs) {
@@ -106,5 +129,15 @@ public class MeshGenerator : MonoBehaviour {
         triangles.Add(a);
         triangles.Add(b);
         triangles.Add(c);
+    }
+
+    GameObject GetColliderAt(float x, float y) {
+        Vector2 vec = new Vector2(x, y);
+        if (collidersDict.ContainsKey(vec)) {
+            return collidersDict[vec];
+        } else {
+            Debug.LogError($"No Colliders at {x}, {y}");
+            return null;
+        }
     }
 }
