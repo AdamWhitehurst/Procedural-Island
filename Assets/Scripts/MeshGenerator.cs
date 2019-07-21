@@ -47,7 +47,7 @@ public class MeshGenerator : MonoBehaviour {
 
         collidersDict = new Dictionary<Vector2, GameObject>();
     }
-    public void GenerateTileMap(byte[] map, int width, int height) {
+    public void GenerateTileMap(Map map, int width, int height) {
         ResetColliders();
 
         float z = transform.position.z;
@@ -55,11 +55,11 @@ public class MeshGenerator : MonoBehaviour {
         for (int x = 0; x < width - 1; x++) {
             int sqrY = 0;
             for (int y = 0; y < height - 1; y++) {
-                byte botLeft = map[(x + 0) + width * (y + 0)];
-                byte botRight = map[(x + 1) + width * (y + 0)];
-                byte topLeft = map[(x + 0) + width * (y + 1)];
-                byte topRight = map[(x + 1) + width * (y + 1)];
-                byte tileUVIndex = GetAutoTile(sqrX, sqrY, map, width, height);
+                byte botLeft = map[x + 0, y + 0];
+                byte botRight = map[x + 1, y + 0];
+                byte topLeft = map[x + 0, y + 1];
+                byte topRight = map[x + 1, y + 1];
+                byte tileUVIndex = GetAutoTile(sqrX, sqrY, map);
                 GenerateSquare(sqrX, sqrY, z, tileUVIndex);
                 if (botLeft == 1) {
                     GenerateCollider(sqrX + 0.25f, sqrY + 0.25f, z);
@@ -82,12 +82,12 @@ public class MeshGenerator : MonoBehaviour {
         ResetMesh();
     }
 
-    byte GetAutoTile(int x, int y, byte[] map, int width, int height) {
+    byte GetAutoTile(int x, int y, Map map) {
         byte tileUVIndex = 0;
-        tileUVIndex = (byte)(tileUVIndex << 1 | map[(x + 0) + width * (y + 0)]);
-        tileUVIndex = (byte)(tileUVIndex << 1 | map[(x + 1) + width * (y + 0)]);
-        tileUVIndex = (byte)(tileUVIndex << 1 | map[(x + 0) + width * (y + 1)]);
-        tileUVIndex = (byte)(tileUVIndex << 1 | map[(x + 1) + width * (y + 1)]);
+        tileUVIndex = (byte)(tileUVIndex << 1 | map[x + 0, y + 0]);
+        tileUVIndex = (byte)(tileUVIndex << 1 | map[x + 1, y + 0]);
+        tileUVIndex = (byte)(tileUVIndex << 1 | map[x + 0, y + 1]);
+        tileUVIndex = (byte)(tileUVIndex << 1 | map[x + 1, y + 1]);
 
         return tileUVIndex;
     }

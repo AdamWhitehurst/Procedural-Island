@@ -17,8 +17,6 @@ public class MapGenerator : MonoBehaviour {
     [Range(0, 10)]
     public int smoothingIterations;
 
-    Byte[] map;
-
     [Range(1, 10)]
     public int borderSize = 1;
 
@@ -33,11 +31,11 @@ public class MapGenerator : MonoBehaviour {
     }
 
     void GenerateMap() {
-        map = new Byte[width * height];
-        RandomFillMap();
+        Map map = new Map(width, height);
+        RandomFillMap(map);
 
         for (int i = 0; i < smoothingIterations; i++) {
-            SmoothMap();
+            SmoothMap(map);
         }
 
 
@@ -45,7 +43,7 @@ public class MapGenerator : MonoBehaviour {
         meshGen.GenerateTileMap(map, width, height);
     }
 
-    void RandomFillMap() {
+    void RandomFillMap(Map map) {
         if (useRandomSeed) seed = Time.time.ToString();
 
         System.Random pseudoRandom = new System.Random(seed.GetHashCode());
@@ -54,42 +52,42 @@ public class MapGenerator : MonoBehaviour {
             for (int y = 0; y < height; y++) {
                 int i = x + width * y;
                 if (x > borderSize && x <= width - borderSize && y > borderSize && y <= height - borderSize) {
-                    map[i] = (byte)(pseudoRandom.Next(0, 100) < randomFillPercent ? 0 : 1);
-                } else map[i] = 1;
+                    map[x, y] = (Byte)(pseudoRandom.Next(0, 100) < randomFillPercent ? 0 : 1);
+                } else map[x, y] = 1;
             }
         }
     }
 
-    void SmoothMap() {
+    void SmoothMap(Map map) {
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 int i = x + width * y;
-                byte neighborWallCount = GetNeighborWallCount(x, y);
+                Byte neighborWallCount = GetActiveNeighborCount(map, x, y);
                 if (neighborWallCount > 4) {
-                    map[i] = 1;
+                    map[x, y] = 1;
                 } else if (neighborWallCount < 4) {
-                    map[i] = 0;
+                    map[x, y] = 0;
                 }
             }
         }
     }
-    byte GetNeighborWallCount(int centerX, int centerY) {
-        byte walls = GetNeighborWalls(centerX, centerY);
-        byte wallCount = 0;
+    Byte GetActiveNeighborCount(Map map, int centerX, int centerY) {
+        Byte walls = GetActiveNeighbors(map, centerX, centerY);
+        Byte wallCount = 0;
         for (int i = 0; i < 8; i++) {
-            wallCount += (byte)((walls >> i) & 1);
+            wallCount += (Byte)((walls >> i) & 1);
         }
         return wallCount;
     }
-    byte GetNeighborWalls(int centerX, int centerY) {
-        byte walls = 0;
+    Byte GetActiveNeighbors(Map map, int centerX, int centerY) {
+        Byte walls = 0;
         for (int x = centerX - 1; x <= centerX + 1; x++) {
             for (int y = centerY - 1; y <= centerY + 1; y++) {
                 if (centerX != x || centerY != y) {
                     if (x >= 0 && x < width && y >= 0 && y < height) {
-                        walls = (byte)(walls << 1 | map[x + width * y]);
+                        walls = (Byte)(walls << 1 | map[x, y]);
                     } else {
-                        walls = (byte)(walls << 1 | 1);
+                        walls = (Byte)(walls << 1 | 1);
                     }
                 }
             }

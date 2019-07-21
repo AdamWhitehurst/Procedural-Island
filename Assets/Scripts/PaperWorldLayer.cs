@@ -2,11 +2,6 @@ using System;
 
 /// <summary>
 /// Name: PaperWorldLayer.cs
-/// Created by: BlueSin
-/// Created on: 10/12/2014
-/// Last Updated by: BlueSin
-/// Last Updated on: 11/16/2016
-/// Copyright: Pixelsoft Games, LLC. 2014 - 2016
 /// Description: TODO
 /// </summary>
 [Serializable]
