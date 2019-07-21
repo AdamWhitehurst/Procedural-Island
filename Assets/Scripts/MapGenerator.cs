@@ -64,7 +64,7 @@ public class MapGenerator : MonoBehaviour {
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 int i = x + width * y;
-                int neighborWallCount = GetNeighborWallCount(x, y);
+                byte neighborWallCount = GetNeighborWallCount(x, y);
                 if (neighborWallCount > 4) {
                     map[i] = 1;
                 } else if (neighborWallCount < 4) {
@@ -73,21 +73,28 @@ public class MapGenerator : MonoBehaviour {
             }
         }
     }
-
-    int GetNeighborWallCount(int centerX, int centerY) {
-        int wallCount = 0;
+    byte GetNeighborWallCount(int centerX, int centerY) {
+        byte walls = GetNeighborWalls(centerX, centerY);
+        byte wallCount = 0;
+        for (int i = 0; i < 8; i++) {
+            wallCount += (byte)((walls >> i) & 1);
+        }
+        return wallCount;
+    }
+    byte GetNeighborWalls(int centerX, int centerY) {
+        byte walls = 0;
         for (int x = centerX - 1; x <= centerX + 1; x++) {
             for (int y = centerY - 1; y <= centerY + 1; y++) {
                 if (centerX != x || centerY != y) {
                     if (x >= 0 && x < width && y >= 0 && y < height) {
-                        wallCount += map[x + width * y];
+                        walls = (byte)(walls << 1 | map[x + width * y]);
                     } else {
-                        wallCount += 1;
+                        walls = (byte)(walls << 1 | 1);
                     }
                 }
             }
         }
-        return wallCount;
+        return walls;
     }
 
     // void OnDrawGizmos() {
