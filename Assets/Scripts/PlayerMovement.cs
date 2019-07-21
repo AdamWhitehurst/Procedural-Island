@@ -6,11 +6,13 @@ public class PlayerMovement : MonoBehaviour {
     public float speed;
 
     private Rigidbody2D rb;
-    // private Animator anmtr;
+    private Animator anmtr;
+
+    private float lastMoveX;
 
     // Start is called before the first frame update
     void Start() {
-        // anmtr = GetComponent<Animator>();
+        anmtr = GetComponent<Animator>();
         rb = GetComponent<Rigidbody2D>();
 
     }
@@ -23,7 +25,7 @@ public class PlayerMovement : MonoBehaviour {
             MoveCharacter(newVelocity, speed);
         }
         // Update Animation State
-        // UpdateAnimatorMovement(newVelocity);
+        UpdateAnimatorMovement(newVelocity);
     }
 
     Vector3 GetInputs() {
@@ -40,15 +42,17 @@ public class PlayerMovement : MonoBehaviour {
           );
     }
 
-    // void UpdateAnimatorMovement(Vector3 movement) {
-    //     if (movement != Vector3.zero) {
-    //         anmtr.SetBool("moving", true);
-    //         if (movement.x != 0) {
-    //             anmtr.SetFloat("moveX", movement.x);
-    //         }
-    //     } else {
-    //         anmtr.SetBool("moving", false);
-    //     }
-    // }
+    void UpdateAnimatorMovement(Vector3 movement) {
+        if (movement != Vector3.zero) {
+            anmtr.SetBool("moving", true);
+            if (movement.x != 0) {
+                lastMoveX = movement.x;
+            }
+            anmtr.SetFloat("moveX", lastMoveX);
+            anmtr.SetFloat("moveY", movement.y);
+        } else {
+            anmtr.SetBool("moving", false);
+        }
+    }
 
 }
