@@ -13,7 +13,8 @@ public class SpriteLoader : MonoBehaviour {
             instance = this;
         }
 
-        this.tileSprites = Resources.LoadAll<Sprite>("Water");
+        this.tileSprites = Resources.LoadAll<Sprite>("AutoTiles/Sand_On_Water");
+        Debug.Log("Loaded Sprites");
     }
 
     public Material GetTileMaterial() {
