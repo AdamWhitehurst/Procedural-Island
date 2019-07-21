@@ -34,4 +34,34 @@ public class Map {
     /// Gets the height of this map.
     /// </summary>
     public int Height { get { return height; } }
+
+    public bool IsInRange(int x, int y) {
+        return x >= 0 && x < width && y >= 0 && y < height;
+    }
+
+    public byte ActiveNeighborByte(int centerX, int centerY, byte activeType) {
+        byte activeAddress = 0;
+        for (int x = centerX - 1; x <= centerX + 1; x++) {
+            for (int y = centerY - 1; y <= centerY + 1; y++) {
+                if (centerX != x || centerY != y) {
+                    if (IsInRange(x, y)) {
+                        byte activeByte = (byte)(this[x, y] == activeType ? 1 : 0);
+                        activeAddress = (byte)(activeAddress << 1 | activeByte);
+                    } else {
+                        activeAddress = (byte)(activeAddress << 1 | 0);
+                    }
+                }
+            }
+        }
+        return activeAddress;
+    }
+
+    public byte ActiveNeighborCount(int centerX, int centerY, byte activeType) {
+        byte activeAddress = this.ActiveNeighborByte(centerX, centerY, activeType);
+        byte activeCount = 0;
+        for (int i = 0; i < 8; i++) {
+            activeCount += (byte)((activeAddress >> i) & 1);
+        }
+        return activeCount;
+    }
 }

@@ -47,34 +47,18 @@ public class MeshGenerator : MonoBehaviour {
 
         collidersDict = new Dictionary<Vector2, GameObject>();
     }
-    public void GenerateTileMap(Map map, int width, int height) {
+    public void GenerateTileMap(Map map) {
         ResetColliders();
 
         float z = transform.position.z;
         int sqrX = 0;
-        for (int x = 0; x < width - 1; x++) {
+        for (int x = 0; x < map.Width - 1; x++) {
             int sqrY = 0;
-            for (int y = 0; y < height - 1; y++) {
-                byte botLeft = map[x + 0, y + 0];
-                byte botRight = map[x + 1, y + 0];
-                byte topLeft = map[x + 0, y + 1];
-                byte topRight = map[x + 1, y + 1];
-                byte tileUVIndex = GetAutoTile(sqrX, sqrY, map);
+            for (int y = 0; y < map.Height - 1; y++) {
+                byte tileUVIndex = GetByteAddress(sqrX, sqrY, map);
                 GenerateSquare(sqrX, sqrY, z, tileUVIndex);
-                if (botLeft == 1) {
-                    GenerateCollider(sqrX + 0.25f, sqrY + 0.25f, z);
-                }
-                if (botRight == 1) {
-                    GenerateCollider(sqrX + 0.75f, sqrY + 0.25f, z);
-                }
-                if (topLeft == 1) {
-                    GenerateCollider(sqrX + 0.25f, sqrY + 0.75f, z);
-                }
-                if (topRight == 1) {
-                    GenerateCollider(sqrX + 0.75f, sqrY + 0.75f, z);
-                }
+                GenerateTileColliders(x, y, z, sqrX, sqrY, map);
                 sqrY++;
-
             }
             sqrX++;
         }
@@ -82,18 +66,25 @@ public class MeshGenerator : MonoBehaviour {
         ResetMesh();
     }
 
-    byte GetAutoTile(int x, int y, Map map) {
-        byte tileUVIndex = 0;
-        tileUVIndex = (byte)(tileUVIndex << 1 | map[x + 0, y + 0]);
-        tileUVIndex = (byte)(tileUVIndex << 1 | map[x + 1, y + 0]);
-        tileUVIndex = (byte)(tileUVIndex << 1 | map[x + 0, y + 1]);
-        tileUVIndex = (byte)(tileUVIndex << 1 | map[x + 1, y + 1]);
+    byte GetByteAddress(int x, int y, Map map) {
+        if (map[x, y] == 255) return 31;
+        byte tileUVByteAddress = 0;
+        // Make anything that isn't 1 a 0
+        byte botLeft = (byte)(map[x + 0, y + 0] != 0 ? 1 : 0);
+        byte botRight = (byte)(map[x + 1, y + 0] != 0 ? 1 : 0);
+        byte topLeft = (byte)(map[x + 0, y + 1] != 0 ? 1 : 0);
+        byte topRight = (byte)(map[x + 1, y + 1] != 0 ? 1 : 0);
 
-        return tileUVIndex;
+        tileUVByteAddress = (byte)(tileUVByteAddress << 1 | botLeft);
+        tileUVByteAddress = (byte)(tileUVByteAddress << 1 | botRight);
+        tileUVByteAddress = (byte)(tileUVByteAddress << 1 | topLeft);
+        tileUVByteAddress = (byte)(tileUVByteAddress << 1 | topRight);
+
+        return tileUVByteAddress;
     }
 
 
-    void GenerateSquare(int x, int y, float z, byte tileUVIndex) {
+    void GenerateSquare(int x, int y, float z, byte tileByteAddress) {
 
         vertices.Add(new Vector3(x, y, z));
         vertices.Add(new Vector3(x + 1, y, z));
@@ -105,12 +96,31 @@ public class MeshGenerator : MonoBehaviour {
         AddTriangle(sqrIdx + 0, sqrIdx + 1, sqrIdx + 2);
         AddTriangle(sqrIdx + 3, sqrIdx + 2, sqrIdx + 1);
 
-        AddUVs(SpriteLoader.instance.GetTileUVs(tileUVIndex));
+        AddUVs(SpriteLoader.instance.GetTileUVs(tileByteAddress));
 
         squareCount++;
     }
 
-    void GenerateCollider(float x, float y, float z) {
+    void GenerateTileColliders(int x, int y, float z, int sqrX, int sqrY, Map map) {
+        byte botLeft = map[x + 0, y + 0];
+        byte botRight = map[x + 1, y + 0];
+        byte topLeft = map[x + 0, y + 1];
+        byte topRight = map[x + 1, y + 1];
+        if (botLeft != 0) {
+            GenerateSubCollider(sqrX + 0.25f, sqrY + 0.25f, z);
+        }
+        if (botRight != 0) {
+            GenerateSubCollider(sqrX + 0.75f, sqrY + 0.25f, z);
+        }
+        if (topLeft != 0) {
+            GenerateSubCollider(sqrX + 0.25f, sqrY + 0.75f, z);
+        }
+        if (topRight != 0) {
+            GenerateSubCollider(sqrX + 0.75f, sqrY + 0.75f, z);
+        }
+    }
+
+    void GenerateSubCollider(float x, float y, float z) {
         Vector2 vec = new Vector2(x, y);
         GameObject colObj = new GameObject();
         colObj.transform.parent = collidersParent.transform;

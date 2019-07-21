@@ -5,8 +5,8 @@ using System;
 
 public class MapGenerator : MonoBehaviour {
 
-    public int width;
-    public int height;
+    public int mapWidth;
+    public int mapHeight;
 
     public string seed;
     public bool useRandomSeed;
@@ -16,6 +16,9 @@ public class MapGenerator : MonoBehaviour {
 
     [Range(0, 10)]
     public int smoothingIterations;
+
+    [Range(0, 100)]
+    public int fillThreshold = 70;
 
     [Range(1, 10)]
     public int borderSize = 1;
@@ -31,16 +34,28 @@ public class MapGenerator : MonoBehaviour {
     }
 
     void GenerateMap() {
-        Map map = new Map(width, height);
+        Map map = new Map(mapWidth, mapHeight);
         RandomFillMap(map);
 
         for (int i = 0; i < smoothingIterations; i++) {
             SmoothMap(map);
         }
 
+        if (fillThreshold > 0) RemoveSmallRegions(map, 1, 0);
+
+        List<List<Coord>> landRegions = GetRegions(map, 0);
+
+        foreach (List<Coord> region in landRegions) {
+            foreach (Coord coord in region) {
+                if (map.ActiveNeighborCount(coord.X, coord.Y, 1) > 0) {
+                    //map[coord.X, coord.Y] = 255;
+                }
+            }
+        }
+
 
         MeshGenerator meshGen = GetComponent<MeshGenerator>();
-        meshGen.GenerateTileMap(map, width, height);
+        meshGen.GenerateTileMap(map);
     }
 
     void RandomFillMap(Map map) {
@@ -48,51 +63,82 @@ public class MapGenerator : MonoBehaviour {
 
         System.Random pseudoRandom = new System.Random(seed.GetHashCode());
 
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                int i = x + width * y;
-                if (x > borderSize && x <= width - borderSize && y > borderSize && y <= height - borderSize) {
-                    map[x, y] = (Byte)(pseudoRandom.Next(0, 100) < randomFillPercent ? 0 : 1);
+        for (int x = 0; x < map.Width; x++) {
+            for (int y = 0; y < map.Height; y++) {
+                if (x > borderSize && x <= map.Width - borderSize && y > borderSize && y <= map.Height - borderSize) {
+                    map[x, y] = (byte)(pseudoRandom.Next(0, 100) < randomFillPercent ? 0 : 1);
                 } else map[x, y] = 1;
             }
         }
     }
 
     void SmoothMap(Map map) {
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                int i = x + width * y;
-                Byte neighborWallCount = GetActiveNeighborCount(map, x, y);
-                if (neighborWallCount > 4) {
-                    map[x, y] = 1;
-                } else if (neighborWallCount < 4) {
+        for (int x = 0; x < map.Width; x++) {
+            for (int y = 0; y < map.Height; y++) {
+                byte activeNeighborCount = map.ActiveNeighborCount(x, y, 0);
+                if (activeNeighborCount > 4) {
                     map[x, y] = 0;
+                } else if (activeNeighborCount < 4) {
+                    map[x, y] = 1;
                 }
             }
         }
     }
-    Byte GetActiveNeighborCount(Map map, int centerX, int centerY) {
-        Byte walls = GetActiveNeighbors(map, centerX, centerY);
-        Byte wallCount = 0;
-        for (int i = 0; i < 8; i++) {
-            wallCount += (Byte)((walls >> i) & 1);
+
+    void RemoveSmallRegions(Map map, byte toFind, byte toChange) {
+        List<List<Coord>> wallRegions = GetRegions(map, toFind);
+        foreach (List<Coord> region in wallRegions) {
+            if (region.Count < fillThreshold) {
+                foreach (Coord coord in region) {
+                    map[coord.X, coord.Y] = toChange;
+                }
+            }
         }
-        return wallCount;
     }
-    Byte GetActiveNeighbors(Map map, int centerX, int centerY) {
-        Byte walls = 0;
-        for (int x = centerX - 1; x <= centerX + 1; x++) {
-            for (int y = centerY - 1; y <= centerY + 1; y++) {
-                if (centerX != x || centerY != y) {
-                    if (x >= 0 && x < width && y >= 0 && y < height) {
-                        walls = (Byte)(walls << 1 | map[x, y]);
-                    } else {
-                        walls = (Byte)(walls << 1 | 1);
+
+    List<List<Coord>> GetRegions(Map map, byte toFind) {
+        List<List<Coord>> regions = new List<List<Coord>>();
+        Map mapFlags = new Map(map.Width, map.Height);
+
+        for (int x = 0; x < map.Width; x++) {
+            for (int y = 0; y < map.Height; y++) {
+                if (mapFlags[x, y] == 0 && map[x, y] == toFind) {
+                    List<Coord> region = GetRegionCoords(map, x, y);
+                    regions.Add(region);
+                    foreach (Coord coord in region) {
+                        mapFlags[coord.X, coord.Y] = 1;
                     }
                 }
             }
         }
-        return walls;
+
+        return regions;
+    }
+
+    List<Coord> GetRegionCoords(Map map, int startX, int startY) {
+        List<Coord> coords = new List<Coord>();
+        Map mapFlags = new Map(map.Width, map.Height);
+        int targetTileType = map[startX, startY];
+        Queue<Coord> toCheck = new Queue<Coord>();
+        toCheck.Enqueue(new Coord(startX, startY));
+        mapFlags[startX, startY] = 1;
+
+        while (toCheck.Count > 0) {
+            Coord coord = toCheck.Dequeue();
+            coords.Add(coord);
+            for (int x = coord.X - 1; x <= coord.X + 1; x++) {
+                for (int y = coord.Y - 1; y <= coord.Y + 1; y++) {
+                    if (map.IsInRange(x, y) && (coord.X == x || coord.Y == y)) {
+                        if (mapFlags[x, y] == 0 && map[x, y] == targetTileType) {
+                            mapFlags[x, y] = 1;
+                            toCheck.Enqueue(new Coord(x, y));
+                        }
+                    }
+                }
+            }
+        }
+
+        return coords;
     }
 
     // void OnDrawGizmos() {
