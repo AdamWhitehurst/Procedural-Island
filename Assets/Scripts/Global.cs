@@ -62,14 +62,46 @@ public static class Global {
       {0, 47}
     };
 
-    // public static readonly Dictionary<int, int> Inner_Sand_Edge_Map = new Dictionary<int, int>() {
-    //   {0, 0},
-    //   {1, }
-}
-
-public enum TileType {
-    Water,
-    Sand,
-    Grass
+    public static readonly Dictionary<int, int> Inner_Sand_Edge_Map = new Dictionary<int, int>() {
+      {248, 28},
+      {212, 24},
+      {160, 22},
+      {105,16},
+      {240,24},
+      {232,16},
+      {148, 29},
+      {41, 29},
+      {192,23},
+      {128,18},
+      {32, 26 },
+      {208, 24},
+      {96, 23 },
+      {40,29},
+      {104, 16},
+      {224, 23},
+      {214, 27},
+      {164, 31},
+      {144,29},
+      {20,29},
+      {150,26},
+      {4,16},
+      {132,17},
+      {22,26},
+      {1, 24},
+      {43,18},
+      {11,18},
+      {9,29},
+      {3,23},
+      {7,23},
+      {6,23},
+      {23,26},
+      {33,25},
+      {107,19},
+      {15,18},
+      {44,17},
+      {52,25},
+      {5,20},
+      {31,30}
+    };
 }
 

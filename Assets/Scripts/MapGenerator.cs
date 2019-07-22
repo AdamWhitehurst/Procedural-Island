@@ -23,6 +23,8 @@ public class MapGenerator : MonoBehaviour {
     [Range(1, 10)]
     public int borderSize = 1;
 
+    private Map gizmoMap;
+
     void Start() {
         GenerateMap();
     }
@@ -43,19 +45,26 @@ public class MapGenerator : MonoBehaviour {
 
         if (fillThreshold > 0) RemoveSmallRegions(map, 1, 0);
 
-        List<List<Coord>> landRegions = GetRegions(map, 0);
 
+        MeshGenerator meshGen = GetComponent<MeshGenerator>();
+        Map tileMap = meshGen.GenerateMap(map);
+        Map tileSheetMap = new Map(tileMap.Width, tileMap.Height);
+        Map edgeMap = GenerateEdgeMap(tileMap, 0, 15);
+
+        List<List<Coord>> landRegions = GetRegions(tileMap, 0);
         foreach (List<Coord> region in landRegions) {
             foreach (Coord coord in region) {
-                if (map.ActiveNeighborCount(coord.X, coord.Y, 1) > 0) {
-                    //map[coord.X, coord.Y] = 255;
+                byte tileByteAddress = edgeMap.ActiveNeighborByte(coord.X, coord.Y, 1);
+                if (edgeMap.IsInRange(coord.X, coord.Y) && edgeMap.ActiveNeighborCount(coord.X, coord.Y, 1) > 0) {
+                    tileMap[coord.X, coord.Y] = tileByteAddress;
+                    tileSheetMap[coord.X, coord.Y] = 1;
                 }
             }
         }
 
-
-        MeshGenerator meshGen = GetComponent<MeshGenerator>();
-        meshGen.GenerateTileMap(map);
+        gizmoMap = edgeMap;
+        meshGen.ApplyTileMap(tileSheetMap, tileMap);
+        meshGen.ApplyMesh();
     }
 
     void RandomFillMap(Map map) {
@@ -65,7 +74,7 @@ public class MapGenerator : MonoBehaviour {
 
         for (int x = 0; x < map.Width; x++) {
             for (int y = 0; y < map.Height; y++) {
-                if (x > borderSize && x <= map.Width - borderSize && y > borderSize && y <= map.Height - borderSize) {
+                if (x > borderSize && x <= map.Width - borderSize - 1 && y > borderSize && y <= map.Height - borderSize - 1) {
                     map[x, y] = (byte)(pseudoRandom.Next(0, 100) < randomFillPercent ? 0 : 1);
                 } else map[x, y] = 1;
             }
@@ -85,12 +94,28 @@ public class MapGenerator : MonoBehaviour {
         }
     }
 
-    void RemoveSmallRegions(Map map, byte toFind, byte toChange) {
-        List<List<Coord>> wallRegions = GetRegions(map, toFind);
+    Map GenerateEdgeMap(Map map, byte around, byte exclude) {
+
+        Map edgeMap = new Map(map.Width, map.Height);
+        for (int x = 0; x < map.Width; x++) {
+            for (int y = 0; y < map.Height; y++) {
+                byte tileByte = map[x, y];
+                if (tileByte != around && tileByte != exclude) {
+                    edgeMap[x, y] = 1;
+                } else {
+                    edgeMap[x, y] = 0;
+                }
+            }
+        }
+        return edgeMap;
+    }
+
+    void RemoveSmallRegions(Map map, byte toFill, byte fillWith) {
+        List<List<Coord>> wallRegions = GetRegions(map, toFill);
         foreach (List<Coord> region in wallRegions) {
             if (region.Count < fillThreshold) {
                 foreach (Coord coord in region) {
-                    map[coord.X, coord.Y] = toChange;
+                    map[coord.X, coord.Y] = fillWith;
                 }
             }
         }
@@ -141,12 +166,16 @@ public class MapGenerator : MonoBehaviour {
         return coords;
     }
 
-    // void OnDrawGizmos() {
-    //     for (int x = 0; x < width; x++) {
-    //         for (int y = 0; y < height; y++) {
-    //             Gizmos.color = (map[x + width * y] == 1) ? Color.white : Color.black;
-    //             Gizmos.DrawCube(new Vector3(x, y, 0), Vector3.one / 5);
-    //         }
-    //     }
-    // }
+    void OnDrawGizmos() {
+        if (gizmoMap == null) return;
+
+        for (int x = 0; x < gizmoMap.Width; x++) {
+            for (int y = 0; y < gizmoMap.Height; y++) {
+                if (gizmoMap[x, y] == 0) Gizmos.color = Color.black;
+                else if (gizmoMap[x, y] == 1) Gizmos.color = Color.white;
+                else if (gizmoMap[x, y] == 2) Gizmos.color = Color.green;
+                Gizmos.DrawCube(new Vector3(x, y, 0), Vector3.one / 5);
+            }
+        }
+    }
 }
