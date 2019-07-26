@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public struct Coord {
-    public int X;
-    public int Y;
+    public readonly int x;
+    public readonly int y;
 
     public Coord(int x, int y) {
-        this.X = x;
-        this.Y = y;
+        this.x = x;
+        this.y = y;
     }
 }

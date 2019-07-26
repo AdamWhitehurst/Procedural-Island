@@ -54,10 +54,10 @@ public class MapGenerator : MonoBehaviour {
         List<List<Coord>> landRegions = GetRegions(tileMap, 0);
         foreach (List<Coord> region in landRegions) {
             foreach (Coord coord in region) {
-                byte tileByteAddress = edgeMap.ActiveNeighborByte(coord.X, coord.Y, 1);
-                if (edgeMap.IsInRange(coord.X, coord.Y) && edgeMap.ActiveNeighborCount(coord.X, coord.Y, 1) > 0) {
-                    tileMap[coord.X, coord.Y] = tileByteAddress;
-                    tileSheetMap[coord.X, coord.Y] = 1;
+                byte tileByteAddress = edgeMap.ActiveNeighborByte(coord.x, coord.y, 1);
+                if (edgeMap.IsInRange(coord.x, coord.y) && edgeMap.ActiveNeighborCount(coord.x, coord.y, 1) > 0) {
+                    tileMap[coord.x, coord.y] = tileByteAddress;
+                    tileSheetMap[coord.x, coord.y] = 1;
                 }
             }
         }
@@ -115,7 +115,7 @@ public class MapGenerator : MonoBehaviour {
         foreach (List<Coord> region in wallRegions) {
             if (region.Count < fillThreshold) {
                 foreach (Coord coord in region) {
-                    map[coord.X, coord.Y] = fillWith;
+                    map[coord.x, coord.y] = fillWith;
                 }
             }
         }
@@ -131,7 +131,7 @@ public class MapGenerator : MonoBehaviour {
                     List<Coord> region = GetRegionCoords(map, x, y);
                     regions.Add(region);
                     foreach (Coord coord in region) {
-                        mapFlags[coord.X, coord.Y] = 1;
+                        mapFlags[coord.x, coord.y] = 1;
                     }
                 }
             }
@@ -151,9 +151,9 @@ public class MapGenerator : MonoBehaviour {
         while (toCheck.Count > 0) {
             Coord coord = toCheck.Dequeue();
             coords.Add(coord);
-            for (int x = coord.X - 1; x <= coord.X + 1; x++) {
-                for (int y = coord.Y - 1; y <= coord.Y + 1; y++) {
-                    if (map.IsInRange(x, y) && (coord.X == x || coord.Y == y)) {
+            for (int x = coord.x - 1; x <= coord.x + 1; x++) {
+                for (int y = coord.y - 1; y <= coord.y + 1; y++) {
+                    if (map.IsInRange(x, y) && (coord.x == x || coord.y == y)) {
                         if (mapFlags[x, y] == 0 && map[x, y] == targetTileType) {
                             mapFlags[x, y] = 1;
                             toCheck.Enqueue(new Coord(x, y));

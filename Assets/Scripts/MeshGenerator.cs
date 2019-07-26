@@ -11,26 +11,26 @@ public class MeshGenerator : MonoBehaviour {
 
     public List<Vector2> uvs;
 
-    private Mesh mesh;
+    private Sprite tileMapSprite;
     public GameObject collidersParent;
 
     public Dictionary<Vector2, GameObject> collidersDict;
     private int squareCount;
 
     void Awake() {
-        mesh = GetComponent<MeshFilter>().mesh;
+        renderer = GetComponent<SpriteRenderer>();
     }
 
     public void ApplyUVs() {
-        mesh.uv = uvs.ToArray();
+        tileMapSprite.uv = uvs.ToArray();
     }
 
     public void ApplyMesh() {
-        mesh.vertices = vertices.ToArray();
-        mesh.triangles = triangles.ToArray();
+        tileMapSprite.vertices = vertices.ToArray();
+        tileMapSprite.triangles = triangles.ToArray();
         ApplyUVs();
-        mesh.Optimize();
-        mesh.RecalculateNormals();
+        tileMapSprite.Optimize();
+        tileMapSprite.RecalculateNormals();
     }
 
     public void ApplyTileMap(Map tileSheetMap, Map tileMap) {

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objecttypes>
+ <objecttype name="Bounds" color="#ffff00"/>
+ <objecttype name="Door" color="#ff00ff"/>
+ <objecttype name="Ladder" color="#5500ff"/>
+</objecttypes>
